@@ -44,13 +44,42 @@ playwright install chromium
 cp .env.example .env
 ```
 
-### Run Tests
+---
+
+## 🔐 Create Your Own Bot
+
+To run this project, you need your own Telegram bot token:
+
+1. Open Telegram and find **@BotFather**
+2. Send command `/newbot` and follow instructions:
+
+   * **Name:** `YourName JobPulse Bot` (visible name)
+   * **Username:** `yourname_jobpulse_bot` (must end with `bot`)
+3. Copy the token BotFather sends you (format: `1234567890:AAH_xxx...`)
+4. Create `.env` file:
+
+```bash
+cp .env.example .env
+```
+
+5. Edit `.env` and paste your token:
+
+```env
+TELEGRAM_TOKEN=1234567890:AAH_your_token_here
+JOBSITE_URL=https://anastasiiaglushakova.github.io/jobboard-demo/
+```
+
+💡 Security note: Your token is personal. Never commit `.env` to Git — it's excluded via `.gitignore`.
+
+---
+
+## ▶ Run Tests
 
 ```bash
 pytest tests/test_jobboard.py -v
 ```
 
-### Start Bot
+## ▶ Start Bot
 
 ```bash
 python3 bot.py
@@ -62,12 +91,13 @@ Then message your bot in Telegram.
 
 ## 🤖 Telegram Commands
 
-| Command          | Description                                |
-| ---------------- | ------------------------------------------ |
-| `/start`         | Welcome message with available commands    |
-| `/help`          | Project description and technologies used  |
-| `/status`        | Check availability of demo job board       |
-| `/test_jobboard` | Run full E2E test suite and receive report |
+| Command          | Description                              |
+| ---------------- | ---------------------------------------- |
+| `/start`         | Welcome message with available commands  |
+| `/help`          | Detailed project description             |
+| `/status`        | Check availability of demo sites         |
+| `/test_jobboard` | Run tests for job board demo site        |
+| `/test_internet` | Run tests for the-internet test platform |
 
 ---
 
@@ -76,8 +106,8 @@ Then message your bot in Telegram.
 ```
 ✅ JobBoard Demo — Тестовый отчёт
 ───────────────────────────────────────
-Всего тестов:   5
-Успешно:       5 ✅
+Всего тестов:   6
+Успешно:       6 ✅
 Упало:         0 ❌
 Время:         6.51 сек
 ───────────────────────────────────────
@@ -86,6 +116,7 @@ Then message your bot in Telegram.
 ✅ test_search_qa_jobs             1.32с
 ✅ test_search_no_results          1.18с
 ✅ test_job_card_structure         1.33с
+✅ test_sort_jobs                  1.81с
 ```
 
 ---
@@ -98,6 +129,7 @@ Then message your bot in Telegram.
 | Search functionality     | ✅ `test_search_python_jobs`, `test_search_qa_jobs` |
 | Empty results handling   | ✅ `test_search_no_results`                         |
 | DOM structure validation | ✅ `test_job_card_structure`                        |
+| Sorting                  | ✅ `test_sort_jobs`                                 |
 | Visual regression        | ✅ Automatic screenshots on failure                 |
 
 All tests use **Page Object Model (POM)** for maintainability.
@@ -110,9 +142,11 @@ All tests use **Page Object Model (POM)** for maintainability.
 jobpulse-bot/
 ├── bot.py
 ├── pages/
-│   └── jobboard_page.py
+│   ├── jobboard_page.py
+│   └── internet_page.py
 ├── tests/
-│   └── test_jobboard.py
+│   ├── test_jobboard.py
+│   └── test_internet_login.py
 ├── utils/
 │   ├── reporter.py
 │   ├── logger.py
