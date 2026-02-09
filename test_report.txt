@@ -1,0 +1,17 @@
+✅ JobBoard Demo — Тестовый отчёт
+─────────────────────────────────────────────
+Всего тестов:   5
+Успешно:       5 ✅
+Упало:         0 ❌
+Пропущено:     0 ⏭
+Время:         6.27 сек
+─────────────────────────────────────────────
+
+✅ tests/test_jobboard.py::TestJobBoardDemo::test_page_loads  1.11с
+✅ tests/test_jobboard.py::TestJobBoardDemo::test_search_python_jobs  1.32с
+✅ tests/test_jobboard.py::TestJobBoardDemo::test_search_qa_jobs  1.22с
+✅ tests/test_jobboard.py::TestJobBoardDemo::test_search_no_results  1.22с
+✅ tests/test_jobboard.py::TestJobBoardDemo::test_job_card_structure  1.40с
+
+─────────────────────────────────────────────
+Сформировано: 2026-02-09 17:19:37
