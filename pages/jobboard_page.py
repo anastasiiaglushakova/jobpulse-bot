@@ -80,3 +80,27 @@ class JobBoardPage:
             jobs.append(job)
 
         return jobs
+
+    def sort_by(self, sort_option: str):
+        """Sort jobs by selected option.
+
+        Args:
+            sort_option: 'newest', 'oldest', or 'title'
+        """
+        self.sort_select.select_option(sort_option)
+        self.page.wait_for_timeout(300)  # Ждём обновления результатов
+
+    def get_job_dates(self) -> list:
+        """Get list of job dates from results (as ISO strings)."""
+        job_cards = self.page.locator(".job-card")
+        count = job_cards.count()
+        dates = []
+
+        for i in range(count):
+            card = job_cards.nth(i)
+            date_str = card.locator(".job-date").inner_text()
+            # Парсим дату из формата "📅 9 февр. 2026 г."
+            # Простой вариант — возвращаем как есть
+            dates.append(date_str)
+
+        return dates

@@ -6,6 +6,7 @@ import os
 import sys
 import subprocess
 import time
+import requests  # ← вынесено наверх
 from pathlib import Path
 from datetime import datetime
 
@@ -33,77 +34,101 @@ if not TELEGRAM_TOKEN:
 
 JOBSITE_URL = os.getenv(
     "JOBSITE_URL", "https://anastasiiaglushakova.github.io/jobboard-demo/"
-)
+)  # ← убраны лишние пробелы
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Обработчик команды /start."""
+    """Обработчик команды /start — краткое меню."""
     user = update.effective_user
     welcome_text = (
         f"👋 Привет, {user.first_name}!\n\n"
-        "Я — JobPulse Bot, система мониторинга демо-сайта вакансий.\n\n"
-        "Доступные команды:\n"
-        "• /test_jobboard — запустить end-to-end тесты\n"
-        "• /status — проверить статус демо-сайта\n"
-        "• /help — справка"
+        "Я — JobPulse Bot, система автоматизированного тестирования.\n\n"
+        "<b>Быстрый доступ:</b>\n"
+        "• /test_jobboard — тесты демо-сайта вакансий\n"
+        "• /test_internet — тесты учебной площадки\n"
+        "• /status — проверить доступность сайтов\n"
+        "• /help — подробная справка о проекте"
     )
-    await update.message.reply_text(welcome_text)
+    await update.message.reply_text(welcome_text, parse_mode="HTML")
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Обработчик команды /help."""
+    """Обработчик команды /help — подробная справка о проекте."""
     help_text = (
-        "ℹ️ *JobPulse Bot — справка*\n\n"
-        "Этот бот автоматически тестирует демо-сайт вакансий:\n"
-        "→ https://anastasiiaglushakova.github.io/jobboard-demo/\n\n"
-        "*Команды:*\n"
-        "• `/test_jobboard` — запустить полный набор e2e тестов\n"
-        "• `/status` — проверить доступность сайта\n"
-        "• `/start` или `/help` — эта справка\n\n"
-        "*Технологии:*\n"
-        "Playwright • PyTest • Python • GitHub Actions"
+        "ℹ️ <b>JobPulse Bot — подробная справка</b>\n\n"
+        "<b>🎯 Назначение</b>\n"
+        "Система автоматизированного тестирования демо-сайтов с доставкой отчётов через Telegram.\n\n"
+        "<b>✅ Этичный подход</b>\n"
+        "• Не тестирует коммерческие сайты без разрешения\n"
+        "• Использует самохостящиеся демо-сайты (GitHub Pages)\n"
+        "• Соблюдает ToS всех платформ\n\n"
+        "<b>⚙️ Технологии</b>\n"
+        "• Playwright — браузерная автоматизация\n"
+        "• PyTest — фреймворк для тестов\n"
+        "• Page Object Model — поддерживаемая архитектура\n"
+        "• GitHub Actions — CI/CD\n"
+        "• python-telegram-bot — интеграция с Telegram\n\n"
+        "<b>🌐 Тестируемые площадки</b>\n"
+        "• JobBoard Demo — демо-сайт вакансий\n"
+        "  https://anastasiiaglushakova.github.io/jobboard-demo/\n"
+        "• the-internet — учебная площадка\n"
+        "  https://the-internet.herokuapp.com/\n\n"
+        "<b>📚 Репозиторий</b>\n"
+        "https://github.com/anastasiiaglushakova/jobpulse-bot\n\n"
+        "<b>❓ Команды</b>\n"
+        "• /test_jobboard — тесты демо-сайта вакансий\n"
+        "• /test_internet — тесты учебной площадки\n"
+        "• /status — проверить доступность сайтов\n"
+        "• /start — краткое меню\n"
+        "• /help — эта справка"
     )
-    await update.message.reply_text(help_text, parse_mode="Markdown")
+    await update.message.reply_text(help_text, parse_mode="HTML")
 
 
 async def status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Проверить статус демо-сайта."""
-    import requests
+    """Проверить статус демо-сайтов."""
+    # URL сайтов
+    sites = {
+        "JobBoard Demo": JOBSITE_URL,
+        "the-internet": "https://the-internet.herokuapp.com/",  # ← убраны пробелы
+    }
 
-    try:
-        response = requests.get(JOBSITE_URL, timeout=10)
-        if response.status_code == 200:
-            status_text = (
-                "✅ Демо-сайт доступен\n\n"
-                f"URL: {JOBSITE_URL}\n"
-                f"Статус: {response.status_code}\n"
-                f"Время ответа: {response.elapsed.total_seconds():.2f} сек"
+    status_text = "🔍 <b>Проверка статуса сайтов</b>\n\n"
+
+    for site_name, site_url in sites.items():
+        try:
+            response = requests.get(site_url, timeout=10)
+            if response.status_code == 200:
+                status_text += (
+                    f"✅ <b>{site_name}</b>\n"
+                    f"   URL: {site_url}\n"
+                    f"   Статус: {response.status_code}\n"
+                    f"   Время ответа: {response.elapsed.total_seconds():.2f} сек\n\n"
+                )
+            else:
+                status_text += (
+                    f"⚠️ <b>{site_name}</b>\n"
+                    f"   URL: {site_url}\n"
+                    f"   Статус: {response.status_code}\n\n"
+                )
+        except Exception as e:
+            status_text += (
+                f"❌ <b>{site_name}</b>\n"
+                f"   URL: {site_url}\n"
+                f"   Ошибка: {str(e)[:50]}\n\n"
             )
-        else:
-            status_text = (
-                "⚠️ Сайт недоступен или вернул ошибку\n\n"
-                f"URL: {JOBSITE_URL}\n"
-                f"Статус: {response.status_code}"
-            )
-    except Exception as e:
-        status_text = (
-            "❌ Ошибка при проверке сайта\n\n"
-            f"URL: {JOBSITE_URL}\n"
-            f"Ошибка: {str(e)}"
-        )
 
-    await update.message.reply_text(status_text)
+    await update.message.reply_text(status_text, parse_mode="HTML")
 
 
-async def run_tests_and_get_report() -> str:
+async def run_tests_and_get_report(test_file: str, site_name: str) -> str:
     """Запустить тесты и вернуть текст отчёта."""
-    # Запускаем pytest с кастомным форматированием
     result = subprocess.run(
         [
             sys.executable,
             "-m",
             "pytest",
-            "tests/test_jobboard.py",
+            test_file,
             "-v",
             "--tb=short",
             "-o",
@@ -113,95 +138,61 @@ async def run_tests_and_get_report() -> str:
         capture_output=True,
         text=True,
         encoding="utf-8",
-        timeout=60,  # Максимум 60 секунд на тесты
+        timeout=60,
     )
 
     # Читаем сохранённый отчёт
     report_path = Path(__file__).parent / "test_report.txt"
     if report_path.exists():
         with open(report_path, "r", encoding="utf-8") as f:
-            report_text = f.read()
+            report = f.read()
+        # Заменяем заголовок на нужный сайт
+        report = report.replace("JobBoard Demo", site_name)
     else:
-        # Если отчёт не сохранился — формируем вручную
+        # Формируем упрощённый отчёт
         passed = result.stdout.count("PASSED")
         failed = result.stdout.count("FAILED")
         total = passed + failed
 
         status_emoji = "✅" if failed == 0 else "❌"
-        report_text = (
-            f"{status_emoji} JobBoard Demo — Тестовый отчёт (упрощённый)\n"
+        report = (
+            f"{status_emoji} {site_name} — Тестовый отчёт\n"
             f"{'─' * 45}\n"
             f"Всего тестов:   {total}\n"
             f"Успешно:       {passed} ✅\n"
             f"Упало:         {failed} ❌\n"
-            f"{'─' * 45}\n\n"
-            f"Подробности в логах бота."
+            f"{'─' * 45}\n"
         )
 
-    # Добавляем информацию о результате выполнения
-    if result.returncode != 0:
-        report_text += f"\n\n⚠️  Код возврата: {result.returncode}"
-
-    return report_text
+    return report
 
 
 async def test_jobboard(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Обработчик команды /test_jobboard — запуск тестов."""
     await update.message.reply_text(
-        "🚀 Запускаю end-to-end тесты для JobBoard Demo...\n"
-        "Ожидайте ~10-15 секунд..."
+        "🚀 Запускаю тесты для JobBoard Demo...\nОжидайте ~10 секунд..."
     )
+    report = await run_tests_and_get_report("tests/test_jobboard.py", "JobBoard Demo")
+    # Экранируем спецсимволы для HTML
+    report = report.replace("<", "&lt;").replace(">", "&gt;")
+    await update.message.reply_text(f"<pre>{report}</pre>", parse_mode="HTML")
 
-    try:
-        # Запускаем тесты
-        report = await run_tests_and_get_report()
 
-        # Отправляем отчёт
-        # Telegram имеет лимит ~4096 символов на сообщение
-        if len(report) > 4000:
-            # Обрезаем до последнего переноса строки перед лимитом
-            report = (
-                report[:4000].rsplit("\n", 1)[0]
-                + "\n\n[Отчёт обрезан из-за лимита Telegram]"
-            )
-
-        await update.message.reply_text(
-            f"```\n{report}\n```", parse_mode="MarkdownV2", disable_notification=False
-        )
-
-        # Отправляем скриншоты, если есть
-        screenshots_dir = Path(__file__).parent / "screenshots"
-        if screenshots_dir.exists():
-            screenshot_files = sorted(
-                [f for f in screenshots_dir.glob("*.png") if f.is_file()],
-                key=lambda x: x.stat().st_mtime,
-                reverse=True,
-            )
-
-            if screenshot_files and "❌" in report:  # Есть падения
-                # Отправляем самый свежий скриншот
-                latest_screenshot = screenshot_files[0]
-                await update.message.reply_photo(
-                    photo=open(latest_screenshot, "rb"),
-                    caption="📸 Скриншот состояния при падении теста",
-                )
-
-    except subprocess.TimeoutExpired:
-        await update.message.reply_text(
-            "❌ Тесты превысили лимит времени (60 сек)\n"
-            "Возможно, проблема с сетью или сайтом."
-        )
-    except Exception as e:
-        await update.message.reply_text(
-            f"❌ Ошибка при запуске тестов:\n" f"```\n{str(e)[:300]}\n```",
-            parse_mode="MarkdownV2",
-        )
+async def test_internet(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text(
+        "🚀 Запускаю тесты для the-internet...\nОжидайте ~10 секунд..."
+    )
+    report = await run_tests_and_get_report(
+        "tests/test_internet_login.py", "the-internet.herokuapp.com"
+    )
+    # Экранируем спецсимволы для HTML
+    report = report.replace("<", "&lt;").replace(">", "&gt;")
+    await update.message.reply_text(f"<pre>{report}</pre>", parse_mode="HTML")
 
 
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Обработчик неизвестных команд."""
     await update.message.reply_text(
-        "❓ Неизвестная команда.\n" "Используйте /help для списка доступных команд."
+        "❓ Неизвестная команда.\nИспользуйте /help для списка доступных команд."
     )
 
 
@@ -215,6 +206,7 @@ def main() -> None:
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("status", status))
     application.add_handler(CommandHandler("test_jobboard", test_jobboard))
+    application.add_handler(CommandHandler("test_internet", test_internet))
 
     # Обработчик неизвестных команд
     application.add_handler(MessageHandler(filters.COMMAND, unknown))

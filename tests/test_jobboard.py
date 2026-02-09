@@ -112,3 +112,40 @@ class TestJobBoardDemo:
             assert "type" in job
 
         logger.info(f"✅ Проверено {len(jobs)} карточек, все поля присутствуют")
+
+    @pytest.mark.e2e
+    @pytest.mark.jobboard
+    def test_sort_jobs(self, page):
+        """Test sorting jobs by different criteria."""
+        logger.info("📝 Тест: сортировка вакансий")
+        jobboard = JobBoardPage(page)
+        jobboard.load()
+
+        # Сортировка по новизне
+        jobboard.sort_by("newest")
+        jobs_newest = jobboard.get_job_titles()
+        logger.info(f"🔍 Сортировка 'новые': {jobs_newest[:3]}")
+
+        # Сортировка по старизне
+        jobboard.sort_by("oldest")
+        jobs_oldest = jobboard.get_job_titles()
+        logger.info(f"🔍 Сортировка 'старые': {jobs_oldest[:3]}")
+
+        # Сортировка по названию
+        jobboard.sort_by("title")
+        jobs_title = jobboard.get_job_titles()
+        logger.info(f"🔍 Сортировка 'по названию': {jobs_title[:3]}")
+
+        # Проверяем, что сортировка изменила порядок
+        assert (
+            jobs_newest != jobs_oldest
+        ), "Сортировка 'новые' и 'старые' должна давать разный порядок"
+        assert len(jobs_newest) > 0, "Должны быть вакансии после сортировки"
+
+        # Проверяем, что сортировка по названию упорядочена
+        titles_sorted = sorted(jobs_title)
+        assert (
+            jobs_title == titles_sorted
+        ), "Сортировка по названию должна быть алфавитной"
+
+        logger.info("✅ Сортировка работает корректно")
