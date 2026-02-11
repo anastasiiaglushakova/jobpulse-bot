@@ -53,10 +53,7 @@ htmlcov/
 # Docker
 *.pid
 
-# Project-specific
+# Project-specific artifacts
 jobs_cache.json
-test_report.txttest_report.txt
-jobs_cache.json
-logs/
-screenshots/
 test_report.txt
+screenshots/
