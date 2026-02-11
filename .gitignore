@@ -53,4 +53,9 @@ htmlcov/
 # Docker
 *.pid
 
+# Project-specific
 jobs_cache.json
+test_report.txttest_report.txt
+jobs_cache.json
+logs/
+screenshots/

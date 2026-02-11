@@ -30,7 +30,7 @@ def browser(browser_context_args):
 @pytest.fixture
 def page(browser, browser_context_args, request):
     """Create new page for each test with screenshot on failure."""
-    # Очищаем папку скриншотов перед тестами
+    # Clear screenshots folder before tests
     if not hasattr(request.session, "_screenshots_cleared"):
         shutil.rmtree("screenshots", ignore_errors=True)
         os.makedirs("screenshots", exist_ok=True)
@@ -40,12 +40,12 @@ def page(browser, browser_context_args, request):
     page = context.new_page()
     yield page
 
-    # Делаем скриншот при падении
+    # Take screenshot on failure
     if hasattr(request.node, "rep_call") and request.node.rep_call.failed:
         screenshot_name = f"{request.node.name}_{int(time.time())}.png"
         screenshot_path = os.path.join("screenshots", screenshot_name)
         page.screenshot(path=screenshot_path, full_page=True)
-        print(f"\n📸 Скриншот сохранён: {screenshot_path}")
+        print(f"\n📸 Screenshot saved: {screenshot_path}")
 
     page.close()
     context.close()
@@ -65,7 +65,7 @@ def telegram_bot_token():
     return os.getenv("TELEGRAM_BOT_TOKEN", "")
 
 
-# Импортируем кастомные хуки для отчётов
+# Import custom hooks for reporting
 from utils.conftest_hooks import (
     pytest_runtest_protocol,
     pytest_runtest_makereport,

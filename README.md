@@ -19,6 +19,7 @@ JobPulse solves two QA challenges in one ethical system:
 | **Testing**   | Interactive commands (`/start`, `/test_jobboard`) | ✅ Yes (local only) |
 
 > 💡 Monitoring runs 24/7 in cloud. Interactive bot requires local terminal.
+> 💬 Bot interface is in Russian (demonstrates localization support). Core code and documentation are in English.
 
 ---
 

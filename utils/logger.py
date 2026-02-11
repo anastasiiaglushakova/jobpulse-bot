@@ -1,5 +1,5 @@
 """
-Настройка логирования для проекта.
+Logging configuration for the project.
 """
 
 import logging
@@ -9,56 +9,56 @@ from datetime import datetime
 
 
 def setup_logger(name: str = "jobpulse") -> logging.Logger:
-    """Настроить и вернуть логгер.
+    """Configure and return a logger.
 
     Args:
-        name: Имя логгера
+        name: Logger name
 
     Returns:
-        Настроенный экземпляр логгера
+        Configured logger instance
     """
-    # Создаём папку для логов
+    # Create logs directory
     logs_dir = Path("logs")
     logs_dir.mkdir(exist_ok=True)
 
-    # Формат времени для имени файла
+    # Timestamp format for filename
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_file = logs_dir / f"jobpulse_{timestamp}.log"
 
-    # Создаём логгер
+    # Create logger
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
 
-    # Удаляем существующие обработчики (чтобы избежать дублирования)
+    # Remove existing handlers (to avoid duplication)
     logger.handlers.clear()
 
-    # Форматтер для консоли
+    # Console formatter
     console_formatter = logging.Formatter(
         "%(asctime)s - %(levelname)s - %(message)s", datefmt="%H:%M:%S"
     )
 
-    # Форматтер для файла (более подробный)
+    # File formatter (more detailed)
     file_formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
-    # Обработчик для консоли (только INFO и выше)
+    # Console handler (INFO and above only)
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(console_formatter)
 
-    # Обработчик для файла (все уровни)
+    # File handler (all levels)
     file_handler = logging.FileHandler(log_file, encoding="utf-8")
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(file_formatter)
 
-    # Добавляем обработчики
+    # Add handlers
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
 
     return logger
 
 
-# Глобальный экземпляр логгера
+# Global logger instance
 logger = setup_logger()

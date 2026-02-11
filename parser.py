@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-JobPulse — автоматический парсер вакансий с демо-сайта.
-Запускается по расписанию, отправляет ТОЛЬКО новые вакансии.
+JobPulse — automatic job parser for demo site.
+Runs on schedule, sends ONLY new job postings.
 """
 
 import os
@@ -12,10 +12,10 @@ from datetime import datetime
 import requests
 from playwright.sync_api import sync_playwright, TimeoutError as PWTimeoutError
 
-# === КОНФИГУРАЦИЯ ===
+# === CONFIGURATION ===
 from dotenv import load_dotenv
 
-load_dotenv()  # ← загружаем .env ОДИН РАЗ здесь
+load_dotenv()
 
 JOBSITE_URL = os.environ.get(
     "JOBSITE_URL", "https://anastasiiaglushakova.github.io/jobboard-demo/"
@@ -26,60 +26,60 @@ CACHE_FILE = Path(__file__).parent / "jobs_cache.json"
 
 
 def load_cache():
-    """Загружает кэш отправленных вакансий."""
+    """Load cache of sent job postings."""
     if CACHE_FILE.exists():
         try:
             with open(CACHE_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
-            print(f"⚠️ Ошибка чтения кэша: {e}", file=sys.stderr)
+            print(f"⚠️ Cache read error: {e}", file=sys.stderr)
             return {}
     return {}
 
 
 def save_cache(cache):
-    """Сохраняет кэш на диск."""
+    """Save cache to disk."""
     with open(CACHE_FILE, "w", encoding="utf-8") as f:
         json.dump(cache, f, ensure_ascii=False, indent=2)
 
 
 def parse_jobs():
     """
-    Парсит вакансии с демо-сайта.
-    Точные селекторы для твоего сайта:
-    - .job-card — карточка вакансии
-    - .job-title — заголовок (h4)
-    - .job-company — компания
-    - .job-tags — теги/стек
-    - .job-description — описание
-    - .job-location — локация
-    - .job-date — дата публикации
+    Parse job postings from demo site.
+    Exact selectors for the site:
+    - .job-card — job card
+    - .job-title — title (h4)
+    - .job-company — company
+    - .job-tags — tags/stack
+    - .job-description — description
+    - .job-location — location
+    - .job-date — publication date
     """
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
-        print(f"🌐 Открываю {JOBSITE_URL}...")
+        print(f"🌐 Opening {JOBSITE_URL}...")
         page.goto(JOBSITE_URL, wait_until="networkidle", timeout=30000)
 
-        # Ждём появления карточек вакансий
-        print("⏳ Ждём загрузки вакансий...")
+        # Wait for job cards to appear
+        print("⏳ Waiting for job postings to load...")
         try:
             page.wait_for_selector(".job-card", timeout=15000)
         except PWTimeoutError:
-            print("❌ Вакансии не загрузились вовремя", file=sys.stderr)
+            print("❌ Job postings did not load in time", file=sys.stderr)
             browser.close()
             return []
 
-        print("✅ Вакансии загружены, извлекаю данные...")
+        print("✅ Job postings loaded, extracting data...")
 
-        # Извлекаем все карточки
+        # Extract all job cards
         job_elements = page.query_selector_all(".job-card")
 
         jobs = []
         for el in job_elements:
             try:
-                # Извлекаем данные по точным селекторам твоего сайта
+                # Extract data using exact selectors
                 title_el = el.query_selector(".job-title")
                 company_el = el.query_selector(".job-company")
                 tags_el = el.query_selector(".job-tags")
@@ -87,7 +87,7 @@ def parse_jobs():
                 location_el = el.query_selector(".job-location")
                 date_el = el.query_selector(".job-date")
 
-                title = title_el.text_content().strip() if title_el else "Без названия"
+                title = title_el.text_content().strip() if title_el else "Untitled"
                 company = company_el.text_content().strip() if company_el else ""
                 tags = tags_el.text_content().strip() if tags_el else ""
                 description = desc_el.text_content().strip() if desc_el else ""
@@ -96,7 +96,7 @@ def parse_jobs():
                     date_el.text_content().replace("📅 ", "").strip() if date_el else ""
                 )
 
-                # Уникальный ID из атрибута data-id
+                # Unique ID from data-id attribute
                 job_id = el.get_attribute("data-id") or title
 
                 jobs.append(
@@ -114,19 +114,17 @@ def parse_jobs():
                 print(f"  📌 {title} ({company})")
 
             except Exception as e:
-                print(f"  ⚠️ Ошибка парсинга карточки: {e}", file=sys.stderr)
+                print(f"  ⚠️ Error parsing job card: {e}", file=sys.stderr)
 
         browser.close()
-        print(f"✅ Извлечено {len(jobs)} вакансий")
+        print(f"✅ Extracted {len(jobs)} job postings")
         return jobs
 
 
 def send_telegram(text: str):
-    """Отправляет сообщение в Telegram через прямой API."""
+    """Send message to Telegram via direct API."""
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        print(
-            "❌ TELEGRAM_BOT_TOKEN или TELEGRAM_CHAT_ID не установлены", file=sys.stderr
-        )
+        print("❌ TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not set", file=sys.stderr)
         return False
 
     try:
@@ -145,33 +143,33 @@ def send_telegram(text: str):
             return False
         return True
     except Exception as e:
-        print(f"❌ Ошибка отправки: {e}", file=sys.stderr)
+        print(f"❌ Send error: {e}", file=sys.stderr)
         return False
 
 
 def main():
-    print(f"\n🔍 [{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Запуск парсинга...")
+    print(f"\n🔍 [{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Starting parser...")
 
-    # Загружаем кэш отправленных вакансий
+    # Load cache of sent job postings
     cache = load_cache()
-    print(f"📦 Кэш: {len(cache)} известных вакансий")
+    print(f"📦 Cache: {len(cache)} known job postings")
 
-    # Парсим новые вакансии
+    # Parse new job postings
     try:
         jobs = parse_jobs()
     except Exception as e:
-        print(f"❌ Критическая ошибка: {e}", file=sys.stderr)
+        print(f"❌ Critical error: {e}", file=sys.stderr)
         sys.exit(1)
 
     if not jobs:
-        print("ℹ️ Вакансии не найдены")
+        print("ℹ️ No job postings found")
         sys.exit(0)
 
-    # Фильтруем только новые (которые ещё не в кэше)
+    # Filter only new jobs (not in cache)
     new_jobs = [j for j in jobs if j["id"] not in cache]
-    print(f"🆕 Новых вакансий: {len(new_jobs)} из {len(jobs)}")
+    print(f"🆕 New job postings: {len(new_jobs)} out of {len(jobs)}")
 
-    # Отправляем новые вакансии
+    # Send new job postings
     sent_count = 0
     for job in new_jobs:
         msg = (
@@ -183,13 +181,13 @@ def main():
         if send_telegram(msg):
             sent_count += 1
             cache[job["id"]] = job["found_at"]
-            print(f"📤 Отправлено: {job['title']}")
+            print(f"📤 Sent: {job['title']}")
         else:
-            print(f"❌ Не отправлено: {job['title']}")
+            print(f"❌ Not sent: {job['title']}")
 
-    # Сохраняем кэш
+    # Save cache
     save_cache(cache)
-    print(f"\n✅ Готово: {sent_count} новых вакансий отправлено\n")
+    print(f"\n✅ Done: {sent_count} new job postings sent\n")
 
 
 if __name__ == "__main__":

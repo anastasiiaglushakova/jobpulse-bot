@@ -35,7 +35,7 @@ class JobBoardPage:
     def get_results_count(self) -> int:
         """Get number of results displayed."""
         text = self.results_count.inner_text()
-        # Extract number from "Результатов: X"
+        # Extract number from "Результатов: X" (site is in Russian)
         try:
             return int(text.split(":")[1].strip())
         except (IndexError, ValueError):
@@ -88,7 +88,7 @@ class JobBoardPage:
             sort_option: 'newest', 'oldest', or 'title'
         """
         self.sort_select.select_option(sort_option)
-        self.page.wait_for_timeout(300)  # Ждём обновления результатов
+        self.page.wait_for_timeout(300)  # Wait for results to update
 
     def get_job_dates(self) -> list:
         """Get list of job dates from results (as ISO strings)."""
@@ -99,8 +99,8 @@ class JobBoardPage:
         for i in range(count):
             card = job_cards.nth(i)
             date_str = card.locator(".job-date").inner_text()
-            # Парсим дату из формата "📅 9 февр. 2026 г."
-            # Простой вариант — возвращаем как есть
+            # Parse date from format "📅 9 февр. 2026 г." (Russian format)
+            # Simple version — return as is
             dates.append(date_str)
 
         return dates

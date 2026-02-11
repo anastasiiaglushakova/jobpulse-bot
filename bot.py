@@ -1,12 +1,12 @@
 """
-JobPulse Telegram Bot — запускает e2e тесты и присылает отчёт.
+JobPulse Telegram Bot — runs e2e tests and sends reports via Telegram.
 """
 
 import os
 import sys
 import subprocess
 import time
-import requests  # ← вынесено наверх
+import requests
 from pathlib import Path
 from datetime import datetime
 
@@ -19,26 +19,26 @@ from telegram.ext import (
     filters,
 )
 
-# Настройка логирования — кастомный логгер
+# Custom logger setup
 from utils.logger import logger
 
-# Загружаем переменные окружения
+# Load environment variables
 from dotenv import load_dotenv
 
 load_dotenv()
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 if not TELEGRAM_BOT_TOKEN:
-    logger.error("❌ TELEGRAM_BOT_TOKEN не найден в .env файле!")
+    logger.error("❌ TELEGRAM_BOT_TOKEN not found in .env file!")
     sys.exit(1)
 
 JOBSITE_URL = os.getenv(
     "JOBSITE_URL", "https://anastasiiaglushakova.github.io/jobboard-demo/"
-)  # ← убраны лишние пробелы
+)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Обработчик команды /start — краткое меню."""
+    """Handler for /start command — brief menu."""
     user = update.effective_user
     welcome_text = (
         f"👋 Привет, {user.first_name}!\n\n"
@@ -53,7 +53,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Обработчик команды /help — подробная справка о проекте."""
+    """Handler for /help command — detailed project description."""
     help_text = (
         "ℹ️ <b>JobPulse Bot — подробная справка</b>\n\n"
         "<b>🎯 Назначение</b>\n"
@@ -86,11 +86,11 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 
 async def status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Проверить статус демо-сайтов."""
-    # URL сайтов
+    """Check status of demo sites."""
+    # Site URLs
     sites = {
         "JobBoard Demo": JOBSITE_URL,
-        "the-internet": "https://the-internet.herokuapp.com/",  # ← убраны пробелы
+        "the-internet": "https://the-internet.herokuapp.com/",
     }
 
     status_text = "🔍 <b>Проверка статуса сайтов</b>\n\n"
@@ -122,7 +122,7 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def run_tests_and_get_report(test_file: str, site_name: str) -> str:
-    """Запустить тесты и вернуть текст отчёта."""
+    """Run tests and return report text."""
     result = subprocess.run(
         [
             sys.executable,
@@ -141,15 +141,15 @@ async def run_tests_and_get_report(test_file: str, site_name: str) -> str:
         timeout=60,
     )
 
-    # Читаем сохранённый отчёт
+    # Read saved report
     report_path = Path(__file__).parent / "test_report.txt"
     if report_path.exists():
         with open(report_path, "r", encoding="utf-8") as f:
             report = f.read()
-        # Заменяем заголовок на нужный сайт
+        # Replace header with correct site name
         report = report.replace("JobBoard Demo", site_name)
     else:
-        # Формируем упрощённый отчёт
+        # Generate simplified report
         passed = result.stdout.count("PASSED")
         failed = result.stdout.count("FAILED")
         total = passed + failed
@@ -172,7 +172,7 @@ async def test_jobboard(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         "🚀 Запускаю тесты для JobBoard Demo...\nОжидайте ~10 секунд..."
     )
     report = await run_tests_and_get_report("tests/test_jobboard.py", "JobBoard Demo")
-    # Экранируем спецсимволы для HTML
+    # Escape special characters for HTML
     report = report.replace("<", "&lt;").replace(">", "&gt;")
     await update.message.reply_text(f"<pre>{report}</pre>", parse_mode="HTML")
 
@@ -184,35 +184,35 @@ async def test_internet(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     report = await run_tests_and_get_report(
         "tests/test_internet_login.py", "the-internet.herokuapp.com"
     )
-    # Экранируем спецсимволы для HTML
+    # Escape special characters for HTML
     report = report.replace("<", "&lt;").replace(">", "&gt;")
     await update.message.reply_text(f"<pre>{report}</pre>", parse_mode="HTML")
 
 
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Обработчик неизвестных команд."""
+    """Handler for unknown commands."""
     await update.message.reply_text(
         "❓ Неизвестная команда.\nИспользуйте /help для списка доступных команд."
     )
 
 
 def main() -> None:
-    """Запуск бота."""
-    # Создаём приложение
+    """Start the bot."""
+    # Create application
     application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
-    # Регистрируем обработчики
+    # Register handlers
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("status", status))
     application.add_handler(CommandHandler("test_jobboard", test_jobboard))
     application.add_handler(CommandHandler("test_internet", test_internet))
 
-    # Обработчик неизвестных команд
+    # Unknown command handler
     application.add_handler(MessageHandler(filters.COMMAND, unknown))
 
-    # Запускаем бота
-    logger.info("✅ JobPulse Bot запущен и ожидает команд...")
+    # Start bot
+    logger.info("✅ JobPulse Bot started and awaiting commands...")
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 

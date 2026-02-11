@@ -2,8 +2,8 @@ name: Hourly job check
 
 on:
   schedule:
-    - cron: '0 * * * *'  # каждый час
-  workflow_dispatch:     # ручной запуск из UI
+    - cron: '0 * * * *'  # every hour
+  workflow_dispatch:     # manual trigger from UI
 
 jobs:
   check:
