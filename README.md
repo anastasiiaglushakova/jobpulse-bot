@@ -18,7 +18,7 @@ JobPulse solves two QA challenges in one ethical system:
 | **Monitoring**| Hourly auto-check → detects new vacancies → Telegram alerts | ❌ No (GitHub Actions) |
 | **Testing**   | Interactive commands (`/start`, `/test_jobboard`) | ✅ Yes (local only) |
 
-> 💡 Monitoring runs 24/7 in cloud. Interactive bot requires local terminal.
+> 💡 Monitoring runs 24/7 in cloud. Interactive bot requires local terminal.  
 > 💬 Bot interface is in Russian (demonstrates localization support). Core code and documentation are in English.
 
 ---
@@ -96,6 +96,7 @@ python3 bot.py
 Available commands:
 * `/start` — welcome menu
 * `/test_jobboard` — run job board tests
+* `/test_internet` — run the-internet tests
 * `/status` — check site availability
 
 ### Test parser locally
@@ -124,18 +125,21 @@ Sends current vacancies to your Telegram chat.
 
 ```
 ✅ JobBoard Demo — Test Report
-───────────────────────────────────────
-Total tests:    6
-Passed:         6 ✅
+─────────────────────────────────────────────
+Total tests:    7
+Passed:         7 ✅
 Failed:         0 ❌
-Duration:       6.51s
-───────────────────────────────────────
-✅ test_page_loads                 1.23s
-✅ test_search_python_jobs         1.45s
-✅ test_search_qa_jobs             1.32s
-✅ test_search_no_results          1.18s
-✅ test_job_card_structure         1.33s
-✅ test_sort_jobs                  1.81s
+Duration:       7.23s
+─────────────────────────────────────────────
+✅ test_page_loads                    1.11s
+✅ test_search_python_jobs            1.32s
+✅ test_search_qa_jobs                1.22s
+✅ test_search_no_results             1.22s
+✅ test_job_card_structure            1.40s
+✅ test_sort_jobs                     1.55s
+✅ test_search_special_characters     0.89s
+─────────────────────────────────────────────
+Generated: 2026-02-12 18:45:22
 ```
 
 ---
@@ -153,16 +157,18 @@ Workflows are visible in the **Actions** tab.
 
 ## 🧪 Test Coverage
 
-| Feature                  | Test                                               |
-| ------------------------ | -------------------------------------------------- |
-| Page load                | ✅ `test_page_loads`                                |
-| Search functionality     | ✅ `test_search_python_jobs`, `test_search_qa_jobs` |
-| Empty results handling   | ✅ `test_search_no_results`                         |
-| DOM structure validation | ✅ `test_job_card_structure`                        |
-| Sorting                  | ✅ `test_sort_jobs`                                 |
-| Visual regression        | ✅ Automatic screenshots on failure                 |
+| Feature                  | Tests                                                                 |
+| ------------------------ | --------------------------------------------------------------------- |
+| Page load                | ✅ `test_page_loads`                                                  |
+| Search functionality     | ✅ `test_search_python_jobs`, `test_search_qa_jobs`                   |
+| Edge cases               | ✅ `test_search_no_results`, `test_search_special_characters`         |
+| DOM structure validation | ✅ `test_job_card_structure`                                          |
+| Sorting                  | ✅ `test_sort_jobs`                                                   |
+| Visual regression        | ✅ Automatic screenshots on failure                                   |
+| Authentication           | ✅ 3 tests for the-internet login (`test_internet_login.py`)          |
 
-All tests use **Page Object Model (POM)**.
+All tests use **Page Object Model (POM)**.  
+**Total:** 10 end-to-end tests (7 for JobBoard + 3 for the-internet).
 
 ---
 
@@ -170,50 +176,56 @@ All tests use **Page Object Model (POM)**.
 
 ```
 jobpulse-bot/
-├── bot.py                     # Interactive bot (local only)
+├── bot.py                     # Interactive Telegram bot (local only)
 ├── parser.py                  # Automated parser (GitHub Actions)
-├── jobs_cache.json            # Stores seen vacancies
+├── conftest.py                # PyTest fixtures and configuration
+├── pytest.ini                 # PyTest configuration
 ├── pages/
-│   ├── jobboard_page.py       # POM for job board
+│   ├── jobboard_page.py       # POM for job board demo
 │   └── internet_page.py       # POM for the-internet
 ├── tests/
-│   ├── test_jobboard.py       # E2E tests for job board
-│   └── test_internet_login.py # E2E tests for the-internet
+│   ├── test_jobboard.py       # 7 E2E tests for job board
+│   └── test_internet_login.py # 3 E2E tests for the-internet
 ├── utils/
-│   ├── reporter.py            # Test report generator
-│   ├── logger.py              # Custom logger
-│   └── conftest_hooks.py      # PyTest hooks
+│   ├── reporter.py            # Human-readable test reports
+│   ├── logger.py              # Custom logger with rotation
+│   └── conftest_hooks.py      # PyTest hooks for reporting
 ├── .github/workflows/
-│   ├── ci.yml                 # Test automation
-│   └── hourly-check.yml       # Hourly monitoring
-└── requirements.txt           # Dependencies
+│   ├── ci.yml                 # Test automation on push/PR
+│   └── hourly-check.yml       # Hourly monitoring via schedule
+├── requirements.txt           # Dependencies
+├── .gitignore                 # Excludes artifacts (cache, logs, venv)
+├── LICENSE                    # MIT License
+└── README.md                  # This file
 ```
 
 ---
 
 ## ⚙️ Technologies
 
-| Category       | Tools                     |
-| -------------- | ------------------------- |
-| Test Framework | PyTest, Playwright        |
-| Telegram Bot   | python-telegram-bot       |
-| CI/CD          | GitHub Actions            |
-| HTTP Client    | requests                  |
-| Logging        | loguru                    |
-| Demo Site      | HTML5, CSS3, Vanilla JS   |
-| Environment    | python-dotenv             |
+| Category       | Tools                                      |
+| -------------- | ------------------------------------------ |
+| Test Framework | PyTest, Playwright                         |
+| Telegram Bot   | python-telegram-bot                        |
+| CI/CD          | GitHub Actions                             |
+| HTTP Client    | requests                                   |
+| Logging        | Custom logger (not loguru — removed)       |
+| Demo Site      | HTML5, CSS3, Vanilla JS (GitHub Pages)     |
+| Environment    | python-dotenv                              |
 
 ---
 
-## 🔒 Security Notes
+## 🔒 Security & Ethics
 
-* `.env` excluded via `.gitignore`
+* `.env` excluded via `.gitignore` — secrets never committed
 * Telegram token has no payment permissions
 * Demo site contains no real user data
-* No third-party platforms are scraped
+* **No third-party platforms are scraped** — only self-hosted demo site
+* Rate limits respected (1 check/hour via GitHub Actions)
 
 ---
 
 ## 📜 License
 
-MIT License — see `LICENSE` for details.
+MIT License © 2026 Anastasiia Glushakova  
+See `LICENSE` for details.
