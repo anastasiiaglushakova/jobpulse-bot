@@ -60,9 +60,9 @@ def jobboard_url():
 
 
 @pytest.fixture(scope="session")
-def telegram_token():
+def telegram_bot_token():
     """Telegram bot token."""
-    return os.getenv("TELEGRAM_TOKEN", "")
+    return os.getenv("TELEGRAM_BOT_TOKEN", "")
 
 
 # Импортируем кастомные хуки для отчётов

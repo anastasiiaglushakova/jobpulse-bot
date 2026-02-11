@@ -27,9 +27,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-if not TELEGRAM_TOKEN:
-    logger.error("❌ TELEGRAM_TOKEN не найден в .env файле!")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+if not TELEGRAM_BOT_TOKEN:
+    logger.error("❌ TELEGRAM_BOT_TOKEN не найден в .env файле!")
     sys.exit(1)
 
 JOBSITE_URL = os.getenv(
@@ -199,7 +199,7 @@ async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 def main() -> None:
     """Запуск бота."""
     # Создаём приложение
-    application = Application.builder().token(TELEGRAM_TOKEN).build()
+    application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
     # Регистрируем обработчики
     application.add_handler(CommandHandler("start", start))
