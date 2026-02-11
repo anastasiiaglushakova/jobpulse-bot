@@ -147,3 +147,18 @@ class TestJobBoardDemo:
         assert jobs_title == titles_sorted, "Title sorting should be alphabetical"
 
         logger.info("✅ Sorting works correctly")
+
+    @pytest.mark.e2e
+    @pytest.mark.jobboard
+    def test_search_special_characters(self, page):
+        """Test searching with special characters (boundary case)."""
+        logger.info("📝 Test: search with special characters")
+        jobboard = JobBoardPage(page)
+        jobboard.load()
+
+        # Search with special characters
+        jobboard.search_jobs("Python@#$%")
+
+        # Should not crash
+        assert "JobBoard" in page.title()
+        logger.info("✅ Search with special characters did not crash the page")
