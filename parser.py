@@ -12,7 +12,6 @@ from datetime import datetime
 import requests
 from playwright.sync_api import sync_playwright, TimeoutError as PWTimeoutError
 
-# === CONFIGURATION ===
 from dotenv import load_dotenv
 
 load_dotenv()

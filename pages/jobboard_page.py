@@ -1,8 +1,9 @@
 """
-Page Object Model for JobBoard Demo site.
+Page Object Model for JobBoard Demo site (stable version).
 """
 
-from playwright.sync_api import Page
+import re
+from playwright.sync_api import Page, TimeoutError
 
 
 class JobBoardPage:
@@ -22,85 +23,77 @@ class JobBoardPage:
         self.sort_select = page.locator("#sort-select")
 
     def load(self):
-        """Navigate to the page."""
         self.page.goto(self.URL)
-        self.page.wait_for_load_state("networkidle")
+        self.page.wait_for_load_state("domcontentloaded")
+        self.jobs_container.wait_for(state="visible")
 
     def search_jobs(self, query: str):
-        """Search for jobs by query."""
         self.search_input.fill(query)
         self.search_button.click()
-        self.page.wait_for_timeout(500)  # Wait for results to update
+
+        self.results_count.wait_for(state="visible", timeout=5000)
+
+        self.page.wait_for_timeout(300)
 
     def get_results_count(self) -> int:
-        """Get number of results displayed."""
+        """
+        Robust parsing of results count from UI text.
+        Supports:
+        - 'Results: 5'
+        - '5 jobs found'
+        - 'No jobs found'
+        """
         text = self.results_count.inner_text()
-        # Extract number from "Результатов: X" (site is in Russian)
-        try:
-            return int(text.split(":")[1].strip())
-        except (IndexError, ValueError):
-            return 0
+        match = re.search(r"\d+", text)
+        return int(match.group()) if match else 0
 
-    def get_job_titles(self) -> list:
-        """Get list of job titles from results."""
-        job_cards = self.page.locator(".job-card")
-        count = job_cards.count()
-        titles = []
+    def get_results_count_text(self) -> str:
+        return self.results_count.inner_text()
 
+    def has_jobs(self) -> bool:
+        """Safe check if any job cards exist."""
+        return self.job_cards.count() > 0
+
+    def get_job_titles(self) -> list[str]:
+        """Safe job titles getter (handles empty state)."""
+        if self.job_cards.count() == 0:
+            return []
+        return self.page.locator(".job-title").all_inner_texts()
+
+    def get_all_job_data(self) -> list[dict]:
+        """Get all job cards data safely."""
+        jobs = []
+
+        count = self.job_cards.count()
         for i in range(count):
-            title = job_cards.nth(i).locator(".job-title").inner_text()
-            titles.append(title)
+            card = self.job_cards.nth(i)
 
-        return titles
+            jobs.append(
+                {
+                    "title": card.locator(".job-title").inner_text(),
+                    "company": card.locator(".job-company").inner_text(),
+                    "location": card.locator(".job-location").inner_text(),
+                    "type": card.locator(".job-type").inner_text(),
+                }
+            )
+
+        return jobs
 
     def is_job_card_visible(self, title: str) -> bool:
-        """Check if job card with specific title is visible."""
         try:
             self.page.locator(f".job-card:has-text('{title}')").wait_for(
                 state="visible", timeout=2000
             )
             return True
-        except:
+        except TimeoutError:
             return False
 
-    def get_all_job_data(self) -> list:
-        """Get all job data from cards."""
-        jobs = []
-        job_cards = self.page.locator(".job-card")
-        count = job_cards.count()
-
-        for i in range(count):
-            card = job_cards.nth(i)
-            job = {
-                "title": card.locator(".job-title").inner_text(),
-                "company": card.locator(".job-company").inner_text(),
-                "location": card.locator(".job-location").inner_text(),
-                "type": card.locator(".job-type").inner_text(),
-            }
-            jobs.append(job)
-
-        return jobs
-
     def sort_by(self, sort_option: str):
-        """Sort jobs by selected option.
-
-        Args:
-            sort_option: 'newest', 'oldest', or 'title'
-        """
         self.sort_select.select_option(sort_option)
-        self.page.wait_for_timeout(300)  # Wait for results to update
 
-    def get_job_dates(self) -> list:
-        """Get list of job dates from results (as ISO strings)."""
-        job_cards = self.page.locator(".job-card")
-        count = job_cards.count()
-        dates = []
+        self.page.wait_for_timeout(300)
 
-        for i in range(count):
-            card = job_cards.nth(i)
-            date_str = card.locator(".job-date").inner_text()
-            # Parse date from format "📅 9 февр. 2026 г." (Russian format)
-            # Simple version — return as is
-            dates.append(date_str)
-
-        return dates
+    def get_job_dates(self) -> list[str]:
+        if self.job_cards.count() == 0:
+            return []
+        return self.page.locator(".job-date").all_inner_texts()
